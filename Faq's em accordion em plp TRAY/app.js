@@ -323,7 +323,43 @@ function envolverResposta(texto) {
   return `<p>${texto.trim()}</p>`;
 }
 
-// ===== 10. GERAÇÃO DO CÓDIGO DA TRAY =====
+/**
+ * Remove todas as tags HTML de uma string, retornando apenas o texto puro.
+ * Utilizado para gerar o conteúdo limpo do Schema.org.
+ */
+function removerTagsHtml(str) {
+  return str.replace(/<[^>]*>/g, '').trim();
+}
+
+// ===== 10. GERAÇÃO DO SCHEMA MARKUP (DADOS ESTRUTURADOS) =====
+/**
+ * Gera o bloco de dados estruturados FAQPage (Schema.org) no formato JSON-LD,
+ * envolvido pela condicional Tray {% if category.id == X %}.
+ *
+ * @param {string} idCategoria - ID numérico da categoria.
+ * @param {Array<{pergunta: string, resposta: string}>} faqs - Lista de FAQs parseadas.
+ * @returns {string} Código completo do schema pronto para colar na TRAY.
+ */
+function gerarSchema(idCategoria, faqs) {
+  const schemaObj = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(faq => ({
+      "@type": "Question",
+      "name": removerTagsHtml(faq.pergunta),
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": removerTagsHtml(faq.resposta)
+      }
+    }))
+  };
+
+  const jsonLd = JSON.stringify(schemaObj, null, 2);
+
+  return `{% if category.id == ${idCategoria} %}\n<script type="application/ld+json">\n${jsonLd}\n</script>\n{% endif %}`;
+}
+
+// ===== 11. GERAÇÃO DO CÓDIGO DA TRAY =====
 /**
  * Função principal acionada ao clicar no botão "Gerar Código".
  * Valida os dados, processa o texto, gera a estrutura de array JS da Tray e exibe na tela.
@@ -396,6 +432,11 @@ function gerarCodigo() {
     document.getElementById('formatBadge').textContent = rotuloExibido;
     secaoSaida.style.display = 'block';
 
+    // Gera e exibe o Schema Markup (Dados Estruturados)
+    const secaoSchema = document.getElementById('outputSectionSchema');
+    document.getElementById('outputCodeSchema').textContent = gerarSchema(idCategoria, faqs);
+    secaoSchema.style.display = 'block';
+
     // Rola a tela suavemente até a seção do código gerado
     setTimeout(() => secaoSaida.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 100);
 
@@ -441,6 +482,38 @@ async function copiarCodigo() {
 }
 
 /**
+ * Copia o código de dados estruturados (Schema) para a área de transferência.
+ */
+async function copiarCodigoSchema() {
+  const codigo = document.getElementById('outputCodeSchema').textContent;
+  const botaoCopiar = document.getElementById('copyBtnSchema');
+
+  try {
+    await navigator.clipboard.writeText(codigo);
+    const htmlOriginal = botaoCopiar.innerHTML;
+    botaoCopiar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Copiado!`;
+    botaoCopiar.classList.add('copied');
+    setTimeout(() => {
+      botaoCopiar.innerHTML = htmlOriginal;
+      botaoCopiar.classList.remove('copied');
+    }, 2500);
+  } catch (e) {
+    const el = document.createElement('textarea');
+    el.value = codigo;
+    el.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    botaoCopiar.textContent = 'Copiado!';
+    setTimeout(() => {
+      botaoCopiar.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar código`;
+      botaoCopiar.classList.remove('copied');
+    }, 2500);
+  }
+}
+
+/**
  * Reseta todos os campos do formulário para o estado inicial.
  */
 function limparTudo() {
@@ -450,6 +523,7 @@ function limparTudo() {
   contadorFaq.classList.remove('has-faqs');
   document.getElementById('errorBox').style.display = 'none';
   document.getElementById('outputSection').style.display = 'none';
+  document.getElementById('outputSectionSchema').style.display = 'none';
   document.getElementById('categoryId').focus();
 }
 
@@ -465,16 +539,101 @@ function exibirErro(mensagem) {
   caixaErro.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
+// ===== 13. MODAL DE GUIA DE INSTALAÇÃO DA TRAY =====
+/**
+ * Abre o modal contendo o guia passo a passo de instalação na Tray.
+ */
+function abrirGuiaModal() {
+  const modal = document.getElementById('guideModal');
+  if (modal) {
+    modal.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+}
+
+/**
+ * Fecha o modal do guia de instalação.
+ */
+function fecharGuiaModal() {
+  const modal = document.getElementById('guideModal');
+  if (modal) {
+    modal.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+}
+
+/**
+ * Fecha o modal ao clicar na área escura (backdrop).
+ */
+function fecharGuiaModalEvent(e) {
+  if (e.target.id === 'guideModal') {
+    fecharGuiaModal();
+  }
+}
+
+/**
+ * Copia o texto de um bloco de snippet dentro do tutorial com feedback visual.
+ * 
+ * @param {string} elementId - ID do elemento pre/code contendo o código.
+ */
+async function copiarSnippet(elementId) {
+  const elemento = document.getElementById(elementId);
+  if (!elemento) return;
+
+  const texto = elemento.textContent;
+  const botao = elemento.parentElement.querySelector('.btn-copy-sm');
+
+  try {
+    await navigator.clipboard.writeText(texto);
+    if (botao) {
+      const textoOriginal = botao.textContent;
+      botao.textContent = 'Copiado!';
+      botao.classList.add('copied');
+      setTimeout(() => {
+        botao.textContent = textoOriginal;
+        botao.classList.remove('copied');
+      }, 2000);
+    }
+  } catch (err) {
+    const tempInput = document.createElement('textarea');
+    tempInput.value = texto;
+    tempInput.style.cssText = 'position:fixed;opacity:0;';
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+
+    if (botao) {
+      botao.textContent = 'Copiado!';
+      botao.classList.add('copied');
+      setTimeout(() => {
+        botao.textContent = 'Copiar código';
+        botao.classList.remove('copied');
+      }, 2000);
+    }
+  }
+}
+
 // ===== 12. COMPATIBILIDADE E ATALHOS DE TECLADO =====
-// Atalho global: Ctrl+Enter ou Cmd+Enter dispara a geração do código
+// Atalho global: Ctrl+Enter ou Cmd+Enter dispara a geração do código; Esc fecha o modal
 document.addEventListener('keydown', (evento) => {
   if ((evento.ctrlKey || evento.metaKey) && evento.key === 'Enter') {
     gerarCodigo();
   }
+  if (evento.key === 'Escape') {
+    fecharGuiaModal();
+  }
 });
+
+// Exposição global das funções do modal
+window.abrirGuiaModal = abrirGuiaModal;
+window.fecharGuiaModal = fecharGuiaModal;
+window.fecharGuiaModalEvent = fecharGuiaModalEvent;
+window.copiarSnippet = copiarSnippet;
 
 // Alias em inglês para manter total compatibilidade com HTMLs/scripts antigos
 window.generateCode = gerarCodigo;
 window.copyCode = copiarCodigo;
 window.clearAll = limparTudo;
 window.parseFaqs = analisarFaqs;
+
