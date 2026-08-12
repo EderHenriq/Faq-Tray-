@@ -343,11 +343,14 @@ Resposta separada por uma linha em branco.</pre>
   .faq-accordion-wrap { max-width: 840px; margin: 0 auto; }
   .faq-item { border-bottom: 1px solid #e2e8f0; margin-bottom: 12px; }
   .faq-question { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 18px 0; background: none; border: none; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; color: #1e293b; }
+  .faq-question h2 { font-size: 16px; font-weight: 600; margin: 0; color: inherit; display: inline; }
   .faq-icon { font-size: 22px; font-weight: 400; transition: transform 0.3s ease; color: #f97316; }
   .faq-item.active .faq-icon { transform: rotate(45deg); }
   .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
   .faq-item.active .faq-answer { max-height: 600px; }
   .faq-answer-inner { padding-bottom: 20px; color: #475569; font-size: 14.5px; line-height: 1.7; }
+  .faq-answer-inner p { margin: 0 0 10px 0; }
+  .faq-answer-inner p:last-child { margin-bottom: 0; }
 &lt;/style&gt;</code></pre>
             </div>
           </div>
@@ -393,11 +396,14 @@ Código CSS base:
 .faq-accordion-wrap { max-width: 840px; margin: 0 auto; }
 .faq-item { border-bottom: 1px solid #e2e8f0; margin-bottom: 12px; }
 .faq-question { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 18px 0; background: none; border: none; font-size: 16px; font-weight: 600; text-align: left; cursor: pointer; color: #1e293b; }
+.faq-question h2 { font-size: 16px; font-weight: 600; margin: 0; color: inherit; display: inline; }
 .faq-icon { font-size: 22px; font-weight: 400; transition: transform 0.3s ease; color: #f97316; }
 .faq-item.active .faq-icon { transform: rotate(45deg); }
 .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.35s ease; }
 .faq-item.active .faq-answer { max-height: 600px; }
-.faq-answer-inner { padding-bottom: 20px; color: #475569; font-size: 14.5px; line-height: 1.7; }</code></pre>
+.faq-answer-inner { padding-bottom: 20px; color: #475569; font-size: 14.5px; line-height: 1.7; }
+.faq-answer-inner p { margin: 0 0 10px 0; }
+.faq-answer-inner p:last-child { margin-bottom: 0; }</code></pre>
             </div>
           </div>
 
